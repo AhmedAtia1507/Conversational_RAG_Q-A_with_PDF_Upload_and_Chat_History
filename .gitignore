@@ -1,0 +1,10 @@
+Engines/__pycache__/
+RAG/__pycache__/
+RAG/Utils/__pycache__/
+RAG/VectorStore/__pycache__/
+Student/__pycache__/
+student.db
+.chroma/
+Engines/__pycache__/
+adminCredentials.json
+userCredentials.json
