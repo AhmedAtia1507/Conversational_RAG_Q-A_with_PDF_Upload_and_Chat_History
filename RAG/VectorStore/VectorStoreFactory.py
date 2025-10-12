@@ -21,8 +21,6 @@ class VectorStoreFactory:
     def create_vector_store(cls):
         config = ConfigReader().get("RAG", {})[0]
         vector_store_type = config.get("vector_store", "Chroma")
-        if not os.environ.get("HF_TOKEN"):
-            os.environ["HF_TOKEN"] = config.get("API_KEY", "")
         embeddings = HuggingFaceEmbeddings(model_name=config.get("model_name", "bert-base-uncased"))
 
         available_vector_stores = ["Chroma"]

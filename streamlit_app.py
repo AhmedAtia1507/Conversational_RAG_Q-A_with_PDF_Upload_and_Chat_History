@@ -46,9 +46,13 @@ class ChatApp:
 
             st.session_state.api_key = st.text_input("Enter your Groq API Key:", type="password")
 
-            if st.session_state.api_key and st.session_state.selected_model:
+            st.session_state.embedding_api_key = st.text_input (
+                "Please enter your huggingface API key for embeddings:", type="password"
+            )
+            if st.session_state.api_key and st.session_state.selected_model and st.session_state.embedding_api_key:
                 os.environ["GROQ_API_KEY"] = st.session_state.api_key
-                st.success("API Key and Model selected!")
+                os.environ["HF_TOKEN"] = st.session_state.embedding_api_key
+                st.success("API Keys and Model selected!")
                 if 'chatbot' not in st.session_state or st.session_state.chatbot.get_llm_type() != st.session_state.selected_model:
                     with st.spinner("Initializing chatbot..."):
                         st.session_state.chatbot = RAG_Chatbot(st.session_state.selected_model)
@@ -69,13 +73,14 @@ class ChatApp:
 
             st.markdown("---")
 
-            uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
-
-            if uploaded_file is not None and 'chatbot' in st.session_state and uploaded_file.file_id not in st.session_state.uploaded_files:
-                st.session_state.uploaded_files.append(uploaded_file.file_id)
-                with st.spinner("Processing PDF and embedding..."):
-                    st.session_state.chatbot.process_pdf(uploaded_file)
-                    st.success("PDF processed and embedded successfully!")
+            if st.session_state.embedding_api_key:
+                
+                uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
+                if uploaded_file is not None and 'chatbot' in st.session_state and uploaded_file.file_id not in st.session_state.uploaded_files:
+                    st.session_state.uploaded_files.append(uploaded_file.file_id)
+                    with st.spinner("Processing PDF and embedding..."):
+                        st.session_state.chatbot.process_pdf(uploaded_file)
+                        st.success("PDF processed and embedded successfully!")
         
     def display_chat_messages(self):
         if 'chatbot' not in st.session_state:
