@@ -1,0 +1,10 @@
+RAG:
+  - model_name: "all-MiniLM-L6-v2"
+    vector_store: "Chroma"
+    persist_directory: ".chroma/embeddings"
+    # API_KEY removed for security - API keys should be stored in .env file
+    # HF_TOKEN should be set as an environment variable
+    Chunking:
+      chunk_size: 500
+      chunk_overlap: 100
+    top_k: 5
