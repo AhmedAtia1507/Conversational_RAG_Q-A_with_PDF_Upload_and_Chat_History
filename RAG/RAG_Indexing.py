@@ -2,12 +2,11 @@ import gc
 import sys
 import traceback
 import tempfile
-from turtle import st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from RAG.VectorStore.VectorStoreFactory import VectorStoreFactory
 from RAG.Utils.ConfigReader import ConfigReader
-
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 class RAG_Indexing:
     """
@@ -53,7 +52,7 @@ class RAG_Indexing:
             # Case 1: If user passes a Streamlit UploadedFile
             print("pdf_path type:", type(pdf_path))
             temp_file_path = None
-            if hasattr(pdf_path, "upload_url"):
+            if isinstance(pdf_path, UploadedFile):
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                     tmp_file.write(pdf_path.read())
                     temp_file_path = tmp_file.name
@@ -92,7 +91,19 @@ class RAG_Indexing:
             except Exception as cleanup_err:
                 print(f"Error cleaning up temp file: {cleanup_err}", file=sys.stderr)
             gc.collect()
+    
     def get_retriever(self):
+        """
+        Returns a retriever object from the vector store.
+        
+        This method creates and returns a retriever interface that can be used
+        to search and retrieve relevant documents from the vector store based
+        on similarity search queries.
+        
+        Returns:
+            Retriever: A retriever object that provides an interface for
+                      querying the vector store and retrieving relevant documents.
+        """
         return self.vector_store.as_retriever()
 # # Testing the RAG_Indexing class
 # if __name__ == "__main__":

@@ -1,10 +1,22 @@
-import yaml
 import os
 from langchain_huggingface import HuggingFaceEmbeddings
 from RAG.Utils.ConfigReader import ConfigReader
 from RAG.VectorStore.ChromaStore import ChromaStore
 
 class VectorStoreFactory:
+    """
+    Factory class for creating vector store instances.
+    This factory provides a centralized way to create vector store objects based on
+    configuration settings. It currently supports Chroma vector stores and can be
+    extended to support additional vector store types.
+    The factory reads configuration from a ConfigReader and sets up the appropriate
+    embedding model and vector store with the specified parameters.
+    Raises:
+        ValueError: If an unsupported vector store type is specified in the configuration.
+    Example:
+        >>> vector_store = VectorStoreFactory.create_vector_store()
+        >>> # Returns a configured ChromaStore instance
+    """
     @classmethod
     def create_vector_store(cls):
         config = ConfigReader().get("RAG", {})[0]
