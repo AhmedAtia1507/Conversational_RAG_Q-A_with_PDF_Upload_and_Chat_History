@@ -1,9 +1,12 @@
+import os
 import gc
 import sys
 import traceback
 import tempfile
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_experimental.text_splitter import SemanticChunker
 from RAG.VectorStore.VectorStoreFactory import VectorStoreFactory
 from RAG.Utils.ConfigReader import ConfigReader
 from streamlit.runtime.uploaded_file_manager import UploadedFile
@@ -30,6 +33,7 @@ class RAG_Indexing:
         """
         self.config = ConfigReader(config_file=config_file)
         self.config = self.config.get("RAG", {})[0]
+        self.embeddings = HuggingFaceEmbeddings(model_name=self.config.get("model_name", "bert-base-uncased"))
         self.vector_store = VectorStoreFactory.create_vector_store()
 
     def index_pdf(self, pdf_path):
@@ -67,16 +71,30 @@ class RAG_Indexing:
 
             loader = PyPDFLoader(temp_file_path)
             documents = loader.load()
-            chunking_configs = self.config.get("Chunking", [{}])
+            # Extract filename for metadata tracking
+            filename = os.path.basename(temp_file_path)
+            # Remove temp file prefixes if present
+            if filename.startswith('tmp'):
+                # Try to get original filename from UploadedFile
+                if isinstance(pdf_path, UploadedFile):
+                    filename = pdf_path.name
 
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=chunking_configs.get("chunk_size", 500),
-                chunk_overlap=chunking_configs.get("chunk_overlap", 100)
+            semantic_splitter = SemanticChunker (
+                embeddings=self.embeddings,
+                breakpoint_threshold_type="gradient",
+                breakpoint_threshold_amount=1
             )
-            texts = text_splitter.split_documents(documents)
+            texts = semantic_splitter.split_documents(documents)
+
             if not texts:
                 print("Warning: No text chunks to index. The PDF may be empty or unreadable.")
                 return
+
+            # Add metadata to each chunk for cross-document tracking
+            for text in texts:
+                text.metadata["source_file"] = filename
+                text.metadata["document_type"] = "pdf"
+
             self.vector_store.add_documents(texts)
         except Exception as e:
             print(f"Error during PDF indexing: {e}", file=sys.stderr)
@@ -85,7 +103,6 @@ class RAG_Indexing:
             # Clean up temp files and force garbage collection
             try:
                 if 'temp_file_path' in locals() and temp_file_path and temp_file_path != pdf_path and isinstance(temp_file_path, str):
-                    import os
                     if os.path.exists(temp_file_path):
                         os.remove(temp_file_path)
             except Exception as cleanup_err:
@@ -94,19 +111,16 @@ class RAG_Indexing:
     
     def get_retriever(self):
         """
-        Returns a retriever object from the vector store.
-        
-        This method creates and returns a retriever interface that can be used
-        to search and retrieve relevant documents from the vector store based
-        on similarity search queries.
-        
+        Returns a retriever object from the vector store with optimized configuration.
+
+        This method creates and returns a retriever interface configured with:
+        - MMR (Maximum Marginal Relevance) search for diversity
+        - k=6 to retrieve enough chunks for list/aggregation questions
+        - fetch_k=20 to consider more candidates before MMR filtering
+        - lambda_mult=0.7 to balance relevance and diversity
+
         Returns:
             Retriever: A retriever object that provides an interface for
                       querying the vector store and retrieving relevant documents.
         """
         return self.vector_store.as_retriever()
-# # Testing the RAG_Indexing class
-# if __name__ == "__main__":
-#     rag_indexing = RAG_Indexing()
-#     config_path = os.path.join(os.path.dirname(__file__), "ShellIntro.pdf")
-#     rag_indexing.index_pdf(config_path)

@@ -27,7 +27,16 @@ class VectorStoreFactory:
         if vector_store_type not in available_vector_stores:
             raise ValueError(f"Unknown vector store type: {vector_store_type}")
         
-        top_k = config.get("top_k", 5)
+        top_k = config.get("top_k", 6)
+        fetch_k = config.get("fetch_k", 20)
+        lambda_mult = config.get("lambda_mult", 0.7)
+
         if vector_store_type == "Chroma":
-            return ChromaStore(embedding_function=embeddings, persist_directory=config.get("persist_directory", ".chroma/student_embeddings"), top_k=top_k)
+            return ChromaStore(
+                embedding_function=embeddings, 
+                persist_directory=config.get("persist_directory", ".chroma/student_embeddings"), 
+                top_k=top_k,
+                fetch_k=fetch_k,
+                lambda_mult=lambda_mult
+            )
         raise ValueError(f"Unknown vector store type: {vector_store_type}")

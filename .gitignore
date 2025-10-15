@@ -13,3 +13,4 @@ RAG/VectorStore/__pycache__
 
 # Config files that may contain sensitive data (optional - remove if you want to commit config.yaml)
 # config.yaml
+Test_Data/

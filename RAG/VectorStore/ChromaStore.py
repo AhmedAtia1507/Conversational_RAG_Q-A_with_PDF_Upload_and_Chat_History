@@ -23,11 +23,13 @@ class ChromaStore(VectorStoreClient):
         persist(): Reinitialize the vector store from persisted data
         as_retriever(): Return a retriever interface for the vector store
     """
-    def __init__(self, embedding_function, persist_directory=".chroma/student_embeddings", top_k=5):
+    def __init__(self, embedding_function, persist_directory=".chroma/student_embeddings", top_k=6, fetch_k=20, lambda_mult=0.7):
         self.embedding_function = embedding_function
         self.persist_directory = persist_directory
         self.vector_store = Chroma(embedding_function=embedding_function, persist_directory=persist_directory)
         self.top_k = top_k
+        self.fetch_k = fetch_k
+        self.lambda_mult = lambda_mult
 
     def add_documents(self, documents):
         """
@@ -95,4 +97,11 @@ class ChromaStore(VectorStoreClient):
             for similarity search. The retriever can be used to find the most relevant
             documents based on query similarity.
         """
-        return self.vector_store.as_retriever(kwargs={"k": self.top_k})
+        return self.vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={
+                "k": self.top_k,
+                "fetch_k": self.fetch_k,
+                "lambda_mult": self.lambda_mult
+            }
+        )

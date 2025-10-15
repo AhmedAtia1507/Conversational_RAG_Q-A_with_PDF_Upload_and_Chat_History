@@ -37,7 +37,17 @@ class RAG_Pipeline:
         self.history = {} # maps session_id to ChatMessageHistory
         self.rag_indexing = RAG_Indexing()
         self.promptTemplate = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant. Answer the user's question based on the context provided."),
+            ("system", """You are a helpful assistant that answers questions based ONLY on the provided context.
+
+IMPORTANT RULES:
+1. If the context does not contain enough information to answer the question, say "I don't have enough information in the provided documents to answer this question."
+2. NEVER make up or infer information that is not explicitly stated in the context.
+3. If a question is ambiguous and could have multiple interpretations, ask for clarification by listing the possible interpretations.
+4. Provide answers in plain text without markdown formatting, asterisks, underscores, or other special characters for styling.
+5. When listing items, make sure to include ALL items mentioned in the context, not just some of them.
+6. If the question asks about something that doesn't exist in the documents (like Q5 when only Q1-Q4 exist), clearly state that it doesn't exist.
+7. When multiple documents are referenced, specify which document contains the information when relevant.
+8. Use clear, straightforward language and be precise with numbers and facts."""),
             ("system", "Relevant Context: {Context}"),
             MessagesPlaceholder(variable_name="History"),
             ("human", "{Question}")

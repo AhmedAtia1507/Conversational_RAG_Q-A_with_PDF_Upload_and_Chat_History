@@ -1,10 +1,10 @@
 RAG:
-  - model_name: "all-MiniLM-L6-v2"
+  - model_name: "sentence-transformers/all-mpnet-base-v2"  # Upgraded from all-MiniLM-L6-v2 for better quality (768 dim vs 384 dim)
     vector_store: "Chroma"
     persist_directory: ".chroma/embeddings"
-    # API_KEY removed for security - API keys should be stored in .env file
-    # HF_TOKEN should be set as an environment variable
+    top_k: 6  # Increased from 5 to retrieve more chunks for list questions
+    fetch_k: 20  # Increased from 10 to consider more candidates before MMR
+    lambda_mult: 0.7
     Chunking:
       chunk_size: 500
       chunk_overlap: 100
-    top_k: 5
